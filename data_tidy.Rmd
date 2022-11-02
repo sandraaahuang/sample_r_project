@@ -1,0 +1,81 @@
+---
+title: "tidy_data"
+author: "sandra huang"
+date: "10/31/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+# using palmer penguin data set for example
+library(palmerpenguins)
+```
+
+## reshaping data
+transforming data from wide data to narrow data or vice versa
+```{r}
+penguins_longer <- penguins %>%
+  group_by(species) %>%
+  summarise(
+    bill = mean(bill_length_mm, na.rm = TRUE),
+    flipper = mean(flipper_length_mm, na.rm = TRUE)
+  ) %>%
+  pivot_longer(
+    cols = bill:flipper,
+    names_to = "property",
+    values_to = "value"
+  )
+
+penguins_wider <- penguins_longer %>%
+  pivot_wider(
+    names_from = property,
+    values_from = value
+  )
+```
+
+## unite and separate data
+```{r}
+mock_unite_penguins <- penguins %>%
+  unite(bill_ration, c(bill_length_mm, bill_depth_mm), sep = '/')
+
+mock_sep_penguins <- mock_unite_penguins %>%
+  separate(bill_ration, into = c('bill_length_mm', 'bill_depth_mm'), sep = '/', convert = TRUE)
+```
+
+## nesting and unnesting
+```{r}
+mock_nest_penguins <- penguins %>%
+  group_by(species) %>%
+  nest()
+
+mock_unnest_penguins <- mock_nest_penguins %>%
+  unnest(data)
+```
+
+## making missing data
+```{r}
+#use complete() to insert rows that include NA values
+
+stocks <- tibble(
+  year = c(2015, 2015, 2015, 2015, 2016, 2016, 2016),
+  quarter = c(1, 2, 3, 4, 2, 3, 4),
+  return = c(100, 34, NA, 345, 134, 534, 200)
+)
+
+#year and quarter is argument that we want to complete
+complete_case <- complete(stocks, year, quarter)
+
+mean <- mean(stocks$return, na.rm = TRUE)
+replace_by_mean <- function(x) {
+  if (is.na(x))
+    return (mean)
+  else 
+    return (x)
+}
+
+complete_case %>%
+  mutate(return = map_dbl(return, replace_by_mean))
+```
+
+
